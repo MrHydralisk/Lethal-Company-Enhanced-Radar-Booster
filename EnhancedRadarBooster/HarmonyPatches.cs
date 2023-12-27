@@ -1,6 +1,9 @@
 ﻿using HarmonyLib;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
+using System.Reflection.Emit;
 using UnityEngine;
 
 namespace EnhancedRadarBooster
@@ -18,7 +21,7 @@ namespace EnhancedRadarBooster
             Harmony val = new Harmony("LethalCompany.MrHydralisk.EnhancedRadarBooster");
             val.Patch((MethodBase)AccessTools.Method(typeof(ManualCameraRenderer), "MapCameraFocusOnPosition", (Type[])null, (Type[])null), postfix: new HarmonyMethod(patchType, "MCR_MapCameraFocusOnPosition_Postfix", (Type[])null));
             val.Patch((MethodBase)AccessTools.Method(typeof(ShipTeleporter), "beamUpPlayer", (Type[])null, (Type[])null), postfix: new HarmonyMethod(patchType, "ST_beamUpPlayer_Postfix", (Type[])null));
-            val.Patch((MethodBase)AccessTools.Method(typeof(ShipTeleporter), "beamOutPlayer", (Type[])null, (Type[])null), postfix: new HarmonyMethod(patchType, "ST_beamOutPlayer_Postfix", (Type[])null));
+            val.Patch((MethodBase)AccessTools.Method(typeof(ShipTeleporter), "beamOutPlayer", (Type[])null, (Type[])null), postfix: new HarmonyMethod(patchType, "ST_beamOutPlayer_Postfix", (Type[])null), transpiler: new HarmonyMethod(patchType, "ST_beamOutPlayer_Transpiler", (Type[])null));
 #if DEBUG
             Plugin.MLogS.LogInfo($"HarmonyPatches is loaded!");
 #endif
@@ -79,6 +82,62 @@ namespace EnhancedRadarBooster
             }
 #if DEBUG
             Plugin.MLogS.LogInfo($"ST_beamOutPlayer_Postfix");
+#endif
+        }
+
+        public static IEnumerable<CodeInstruction> ST_beamOutPlayer_Transpiler(IEnumerable<CodeInstruction> instructions, ShipTeleporter __instance)
+        {
+            Plugin.MLogS.LogInfo($"ST_beamOutPlayer_Transpiler");
+            var foundMassUsageMethod = false;
+            var startIndex = -1;
+            var endIndex = -1;
+
+            var codes = new List<CodeInstruction>(instructions);
+
+            for (var i = 0; i < codes.Count; i++)
+            {
+                Plugin.MLogS.LogInfo($" - " + codes[i].ToString());
+                if (codes[i].opcode == OpCodes.Ret)
+                {
+                    if (foundMassUsageMethod)
+                    {
+                        Plugin.MLogS.LogInfo($"END " + i);
+
+                        endIndex = i; // include current 'ret'
+                        break;
+                    }
+                    else
+                    {
+                        Plugin.MLogS.LogInfo($"START " + (i + 1));
+
+                        startIndex = i + 1; // exclude current 'ret'
+
+                        for (var j = startIndex; j < codes.Count; j++)
+                        {
+                            if (codes[j].opcode == OpCodes.Ret)
+                                break;
+                            var strOperand = codes[j].operand as string;
+                            if (strOperand == "TooBigCaravanMassUsage")
+                            {
+                                foundMassUsageMethod = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            if (startIndex > -1 && endIndex > -1)
+            {
+                // we cannot remove the first code of our range since some jump actually jumps to
+                // it, so we replace it with a no-op instead of fixing that jump (easier).
+                //codes[startIndex].opcode = OpCodes.Nop;
+                //codes.RemoveRange(startIndex + 1, endIndex - startIndex - 1);
+            }
+
+            Plugin.MLogS.LogInfo($"ST_beamOutPlayer_Transpiler END");
+            return codes.AsEnumerable();
+#if DEBUG
+            Plugin.MLogS.LogInfo($"ST_beamOutPlayer_Transpiler");
 #endif
         }
     }
