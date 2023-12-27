@@ -1,3 +1,6 @@
+**1.1.0**  
+- Radar Booster can be teleported back to ship.    
+
 **1.0.1-1.0.2**  
 - Description Updated  
 
