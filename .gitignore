@@ -362,3 +362,5 @@ FodyWeavers.xsd
 *.msp
 # JetBrains Rider
 *.sln.iml
+# Release Archive for Thunderstore
+Release/*.zip
