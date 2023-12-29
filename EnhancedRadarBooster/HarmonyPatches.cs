@@ -22,9 +22,7 @@ namespace EnhancedRadarBooster
             val.Patch((MethodBase)AccessTools.Method(typeof(ManualCameraRenderer), "MapCameraFocusOnPosition", (Type[])null, (Type[])null), postfix: new HarmonyMethod(patchType, "MCR_MapCameraFocusOnPosition_Postfix", (Type[])null));
             val.Patch((MethodBase)AccessTools.Method(typeof(ShipTeleporter), "beamUpPlayer", (Type[])null, (Type[])null), postfix: new HarmonyMethod(patchType, "ST_beamUpPlayer_Postfix", (Type[])null));
             val.Patch((MethodBase)AccessTools.Method(typeof(ShipTeleporter), "beamOutPlayer", (Type[])null, (Type[])null), postfix: new HarmonyMethod(patchType, "ST_beamOutPlayer_Postfix", (Type[])null)); 
-            var enumeratorMethod = AccessTools.Method(typeof(ShipTeleporter), "beamOutPlayer");
-            var moveNext = AccessTools.EnumeratorMoveNext(enumeratorMethod);
-            val.Patch(moveNext, transpiler: new HarmonyMethod(patchType, "ST_beamOutPlayer_Transpiler", (Type[])null));
+            val.Patch(AccessTools.EnumeratorMoveNext(AccessTools.Method(typeof(ShipTeleporter), "beamOutPlayer")), transpiler: new HarmonyMethod(patchType, "ST_beamOutPlayer_Transpiler", (Type[])null));
 #if DEBUG
             Plugin.MLogS.LogInfo($"HarmonyPatches is loaded!");
 #endif
@@ -52,16 +50,12 @@ namespace EnhancedRadarBooster
         public static void ST_beamUpPlayer_Postfix(ShipTeleporter __instance)
         {
             ManualCameraRenderer MCR = StartOfRound.Instance.mapScreen;
-            if (MCR.targetTransformIndex < MCR.radarTargets.Count && MCR.radarTargets[MCR.targetTransformIndex].isNonPlayer)
+            RadarBoosterItem component;
+            if (MCR.targetTransformIndex < MCR.radarTargets.Count && MCR.radarTargets[MCR.targetTransformIndex].isNonPlayer && (component = MCR.radarTargets[MCR.targetTransformIndex].transform.gameObject.GetComponent<RadarBoosterItem>()) != null)
             {
-                RadarBoosterItem component = MCR.radarTargets[MCR.targetTransformIndex].transform.gameObject.GetComponent<RadarBoosterItem>();
-                Plugin.MLogS.LogInfo($"RB " + component?.radarBoosterName ?? "null");
-                if (component != null)
-                {
-                    component.transform.position = __instance.teleporterPosition.position + new Vector3(0, 1f, 0);
-                    component.EnableRadarBooster(false);
-                    component.FallToGround(true);
-                }
+                component.transform.position = __instance.teleporterPosition.position + new Vector3(0, 1f, 0);
+                component.EnableRadarBooster(false);
+                component.FallToGround(true);
             }
 #if DEBUG
             Plugin.MLogS.LogInfo($"ST_beamUpPlayer_Postfix");
@@ -88,37 +82,54 @@ namespace EnhancedRadarBooster
 #endif
         }
 
-        public static IEnumerable<CodeInstruction> ST_beamOutPlayer_Transpiler(IEnumerable<CodeInstruction> instructions)
+        public static Vector3 VectorToRadarBooster(Vector3 current)
         {
-            Plugin.MLogS.LogInfo($"ST_beamOutPlayer_Transpiler");
-            var foundMassUsageMethod = false;
-            var startIndex = -1;
-            var endIndex = -1;
-
-            var codes = new List<CodeInstruction>(instructions);
-
-            for (var i = 0; i < codes.Count; i++)
+            ManualCameraRenderer MCR = StartOfRound.Instance.mapScreen;
+            RadarBoosterItem component;
+            if (MCR.targetTransformIndex < MCR.radarTargets.Count && MCR.radarTargets[MCR.targetTransformIndex].isNonPlayer && (component = MCR.radarTargets[MCR.targetTransformIndex].transform.gameObject.GetComponent<RadarBoosterItem>()) != null)
             {
+#if DEBUG
+                Plugin.MLogS.LogInfo($"From {component.transform.position} To {current}");
+#endif
+                current = component.transform.position;
+                current = RoundManager.Instance.GetRandomNavMeshPositionInRadiusSpherical(current, 0.5f);
+            }
+            return current;
+        }
+
+        public static IEnumerable<CodeInstruction> ST_beamOutPlayer_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator il)
+        {
+            bool foundMassUsageMethod = false;
+            int startIndex = -1;
+            int endIndex = -1;
+            List<CodeInstruction> codes = new List<CodeInstruction>(instructions);
+            for (int i = 0; i < codes.Count; i++)
+            {
+#if DEBUG
                 Plugin.MLogS.LogInfo($" - {i} - {codes[i]} | {codes[i].opcode} | {codes[i].operand} | {codes[i].IsStloc()} | {(codes[i].IsStloc() && codes[i].ToString().Contains("UnityEngine.Vector3"))}");
+#endif
                 if (codes[i].Calls(AccessTools.Method(typeof(RoundManager), "get_Instance")) && (i + 3 < codes.Count) && codes[i+3].Calls(AccessTools.Method(typeof(RoundManager), "get_Instance")))
                 {
+#if DEBUG
                     Plugin.MLogS.LogInfo($"START " + (i));
+#endif
                     startIndex = i;
-                    for (var j = startIndex + 1; j < codes.Count; j++)
+                    for (int j = startIndex + 1; j < codes.Count; j++)
                     {
+#if DEBUG
                         Plugin.MLogS.LogInfo($" - {i} {j} - {codes[j]} | {codes[j].opcode} | {codes[j].operand} | {codes[j].IsStloc()} | {(codes[j].IsStloc() && codes[j].ToString().Contains("UnityEngine.Vector3"))}");
+#endif
                         if (codes[j].IsStloc() && codes[j].ToString().Contains("UnityEngine.Vector3"))
                         {
-                            Plugin.MLogS.LogInfo("foundMassUsageMethod");
-                            foundMassUsageMethod = true; 
+                            foundMassUsageMethod = true;
+#if DEBUG
                             Plugin.MLogS.LogInfo($"END " + j);
+#endif
                             endIndex = j;
                             break;
                         }
                         if (codes[j].opcode == OpCodes.Ret)
                             break;
-                        //if (codes[i].Calls(AccessTools.Method(typeof(RoundManager), "get_Instance")))
-                        //    break;
                     }
                     if (foundMassUsageMethod)
                     {
@@ -126,25 +137,21 @@ namespace EnhancedRadarBooster
                     }
                 }
             }
-            //endIndex = startIndex + 11;
             if (startIndex > -1 && endIndex > -1)
             {
-                // we cannot remove the first code of our range since some jump actually jumps to
-                // it, so we replace it with a no-op instead of fixing that jump (easier).
-                //codes[startIndex].opcode = OpCodes.Nop;
-                //codes.RemoveRange(startIndex + 1, endIndex - startIndex - 1);
-
+#if DEBUG
                 Plugin.MLogS.LogInfo(string.Join("\n", codes.GetRange(startIndex, endIndex - startIndex + 1).Select(x => x.ToString())));
-                CodeInstruction c1 = new CodeInstruction(OpCodes.Ldloc_1);
-                codes[endIndex - 3] = c1;
-                CodeInstruction c2 = new CodeInstruction(OpCodes.Ldfld, AccessTools.Field(typeof(ShipTeleporter), "teleporterPosition"));
-                codes[endIndex - 2] = c2;
-                codes[startIndex].opcode = OpCodes.Nop;
-                codes.RemoveRange(startIndex + 1, endIndex - startIndex - 4);
-                Plugin.MLogS.LogInfo(string.Join("\n", codes.GetRange(startIndex, 4).Select(x => x.ToString())));
-            }
+#endif
+                List<CodeInstruction> instructionsToInsert = new List<CodeInstruction>();
 
-            Plugin.MLogS.LogInfo($"ST_beamOutPlayer_Transpiler END");
+                instructionsToInsert.Add(new CodeInstruction(OpCodes.Ldloc_S, 8));
+                instructionsToInsert.Add(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(HarmonyPatches), "VectorToRadarBooster")));
+                instructionsToInsert.Add(new CodeInstruction(OpCodes.Stloc_S, 8));
+                codes.InsertRange(endIndex + 1, instructionsToInsert);
+#if DEBUG
+                Plugin.MLogS.LogInfo(string.Join("\n", codes.GetRange(startIndex, endIndex - startIndex + instructionsToInsert.Count() + 1).Select(x => x.ToString())));
+#endif
+            }
             return codes.AsEnumerable();
 #if DEBUG
             Plugin.MLogS.LogInfo($"ST_beamOutPlayer_Transpiler");
