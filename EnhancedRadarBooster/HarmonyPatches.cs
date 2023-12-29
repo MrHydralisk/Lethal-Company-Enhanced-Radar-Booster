@@ -21,7 +21,10 @@ namespace EnhancedRadarBooster
             Harmony val = new Harmony("LethalCompany.MrHydralisk.EnhancedRadarBooster");
             val.Patch((MethodBase)AccessTools.Method(typeof(ManualCameraRenderer), "MapCameraFocusOnPosition", (Type[])null, (Type[])null), postfix: new HarmonyMethod(patchType, "MCR_MapCameraFocusOnPosition_Postfix", (Type[])null));
             val.Patch((MethodBase)AccessTools.Method(typeof(ShipTeleporter), "beamUpPlayer", (Type[])null, (Type[])null), postfix: new HarmonyMethod(patchType, "ST_beamUpPlayer_Postfix", (Type[])null));
-            val.Patch((MethodBase)AccessTools.Method(typeof(ShipTeleporter), "beamOutPlayer", (Type[])null, (Type[])null), postfix: new HarmonyMethod(patchType, "ST_beamOutPlayer_Postfix", (Type[])null), transpiler: new HarmonyMethod(patchType, "ST_beamOutPlayer_Transpiler", (Type[])null));
+            val.Patch((MethodBase)AccessTools.Method(typeof(ShipTeleporter), "beamOutPlayer", (Type[])null, (Type[])null), postfix: new HarmonyMethod(patchType, "ST_beamOutPlayer_Postfix", (Type[])null)); 
+            var enumeratorMethod = AccessTools.Method(typeof(ShipTeleporter), "beamOutPlayer");
+            var moveNext = AccessTools.EnumeratorMoveNext(enumeratorMethod);
+            val.Patch(moveNext, transpiler: new HarmonyMethod(patchType, "ST_beamOutPlayer_Transpiler", (Type[])null));
 #if DEBUG
             Plugin.MLogS.LogInfo($"HarmonyPatches is loaded!");
 #endif
@@ -85,7 +88,7 @@ namespace EnhancedRadarBooster
 #endif
         }
 
-        public static IEnumerable<CodeInstruction> ST_beamOutPlayer_Transpiler(IEnumerable<CodeInstruction> instructions, ShipTeleporter __instance)
+        public static IEnumerable<CodeInstruction> ST_beamOutPlayer_Transpiler(IEnumerable<CodeInstruction> instructions)
         {
             Plugin.MLogS.LogInfo($"ST_beamOutPlayer_Transpiler");
             var foundMassUsageMethod = false;
@@ -96,42 +99,49 @@ namespace EnhancedRadarBooster
 
             for (var i = 0; i < codes.Count; i++)
             {
-                Plugin.MLogS.LogInfo($" - " + codes[i].ToString());
-                if (codes[i].opcode == OpCodes.Ret)
+                Plugin.MLogS.LogInfo($" - {i} - {codes[i]} | {codes[i].opcode} | {codes[i].operand} | {codes[i].IsStloc()} | {(codes[i].IsStloc() && codes[i].ToString().Contains("UnityEngine.Vector3"))}");
+                if (codes[i].Calls(AccessTools.Method(typeof(RoundManager), "get_Instance")) && (i + 3 < codes.Count) && codes[i+3].Calls(AccessTools.Method(typeof(RoundManager), "get_Instance")))
                 {
+                    Plugin.MLogS.LogInfo($"START " + (i));
+                    startIndex = i;
+                    for (var j = startIndex + 1; j < codes.Count; j++)
+                    {
+                        Plugin.MLogS.LogInfo($" - {i} {j} - {codes[j]} | {codes[j].opcode} | {codes[j].operand} | {codes[j].IsStloc()} | {(codes[j].IsStloc() && codes[j].ToString().Contains("UnityEngine.Vector3"))}");
+                        if (codes[j].IsStloc() && codes[j].ToString().Contains("UnityEngine.Vector3"))
+                        {
+                            Plugin.MLogS.LogInfo("foundMassUsageMethod");
+                            foundMassUsageMethod = true; 
+                            Plugin.MLogS.LogInfo($"END " + j);
+                            endIndex = j;
+                            break;
+                        }
+                        if (codes[j].opcode == OpCodes.Ret)
+                            break;
+                        //if (codes[i].Calls(AccessTools.Method(typeof(RoundManager), "get_Instance")))
+                        //    break;
+                    }
                     if (foundMassUsageMethod)
                     {
-                        Plugin.MLogS.LogInfo($"END " + i);
-
-                        endIndex = i; // include current 'ret'
                         break;
-                    }
-                    else
-                    {
-                        Plugin.MLogS.LogInfo($"START " + (i + 1));
-
-                        startIndex = i + 1; // exclude current 'ret'
-
-                        for (var j = startIndex; j < codes.Count; j++)
-                        {
-                            if (codes[j].opcode == OpCodes.Ret)
-                                break;
-                            var strOperand = codes[j].operand as string;
-                            if (strOperand == "TooBigCaravanMassUsage")
-                            {
-                                foundMassUsageMethod = true;
-                                break;
-                            }
-                        }
                     }
                 }
             }
+            //endIndex = startIndex + 11;
             if (startIndex > -1 && endIndex > -1)
             {
                 // we cannot remove the first code of our range since some jump actually jumps to
                 // it, so we replace it with a no-op instead of fixing that jump (easier).
                 //codes[startIndex].opcode = OpCodes.Nop;
                 //codes.RemoveRange(startIndex + 1, endIndex - startIndex - 1);
+
+                Plugin.MLogS.LogInfo(string.Join("\n", codes.GetRange(startIndex, endIndex - startIndex + 1).Select(x => x.ToString())));
+                CodeInstruction c1 = new CodeInstruction(OpCodes.Ldloc_1);
+                codes[endIndex - 3] = c1;
+                CodeInstruction c2 = new CodeInstruction(OpCodes.Ldfld, AccessTools.Field(typeof(ShipTeleporter), "teleporterPosition"));
+                codes[endIndex - 2] = c2;
+                codes[startIndex].opcode = OpCodes.Nop;
+                codes.RemoveRange(startIndex + 1, endIndex - startIndex - 4);
+                Plugin.MLogS.LogInfo(string.Join("\n", codes.GetRange(startIndex, 4).Select(x => x.ToString())));
             }
 
             Plugin.MLogS.LogInfo($"ST_beamOutPlayer_Transpiler END");
