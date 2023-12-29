@@ -1,3 +1,6 @@
+**1.3.0**
+- Inverse Teleporter can teleport players to Radar Booster location in facility.
+
 **1.2.0**
 - Radar Booster can be inverse teleported to random location in facility.
 
