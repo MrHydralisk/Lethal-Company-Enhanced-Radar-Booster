@@ -14,4 +14,3 @@ Radar Booster now fits it name and cover bigger area, than employee's transmitte
 * Teleportation will require all clients to have it installed to it getting desync. It won't cause errors, if installed only on one client, but you will see Radar Booster being teleported and interacted, but others will see it still being on same place. Won't cause errors.
 # To/Do
 * Adding Config.
-* Better synchronization of inverse teleportation randomness (minor).

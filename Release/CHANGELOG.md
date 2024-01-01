@@ -1,3 +1,8 @@
+**1.4.0**
+- Teleportation of Radar Booster have full synchronization to fix inverse teleportation randomness being different for each client.
+- Teleportation of RB timing adjusted to fit vanilla player teleportation style.
+- Teleportation of RB now instant.
+
 **1.3.0**
 - Inverse Teleporter can teleport players to Radar Booster location in facility.
 
