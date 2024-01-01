@@ -1,3 +1,6 @@
+**1.4.1**
+- Remote scrap can trigger Radar Booster Flash in it range.
+
 **1.4.0**
 - Teleportation of Radar Booster have full synchronization to fix inverse teleportation randomness being different for each client.
 - Teleportation of RB timing adjusted to fit vanilla player teleportation style.

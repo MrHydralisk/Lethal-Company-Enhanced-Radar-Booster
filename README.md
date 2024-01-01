@@ -9,6 +9,7 @@ Radar Booster now fits it name and cover bigger area, than employee's transmitte
 * Radar Booster can be teleported back to ship by Teleporter.
 * Radar Booster can be teleported to random location in facility by Inverse Teleporter.
 * When Radar Booster selected on Ship Monitor and Inverse Teleporter activated Player will be teleported to selected Radar Booster.
+* Remote scrap can trigger Radar Booster Flash in it range.
 # Client/Server
 * Range increase is fully client-sided and can be used anywhere.
 * Teleportation will require all clients to have it installed to it getting desync. It won't cause errors, if installed only on one client, but you will see Radar Booster being teleported and interacted, but others will see it still being on same place. Won't cause errors.
