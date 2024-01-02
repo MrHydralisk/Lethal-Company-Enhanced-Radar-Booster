@@ -19,12 +19,15 @@ namespace EnhancedRadarBooster
         {
             patchType = typeof(HarmonyPatches);
             Harmony val = new Harmony("LethalCompany.MrHydralisk.EnhancedRadarBooster");
-            val.Patch(AccessTools.Method(typeof(ManualCameraRenderer), "MapCameraFocusOnPosition", (Type[])null, (Type[])null), postfix: new HarmonyMethod(patchType, "MCR_MapCameraFocusOnPosition_Postfix", (Type[])null));
-            val.Patch(AccessTools.EnumeratorMoveNext(AccessTools.Method(typeof(ShipTeleporter), "beamUpPlayer")), transpiler: new HarmonyMethod(patchType, "ST_beamUpPlayer_Transpiler", (Type[])null));
+            if (Config.mapRangeRBFlashEnabled?.Value ?? true)
+                val.Patch(AccessTools.Method(typeof(ManualCameraRenderer), "MapCameraFocusOnPosition", (Type[])null, (Type[])null), postfix: new HarmonyMethod(patchType, "MCR_MapCameraFocusOnPosition_Postfix", (Type[])null));
+            if (Config.tpRBEnabled?.Value ?? true)
+                val.Patch(AccessTools.EnumeratorMoveNext(AccessTools.Method(typeof(ShipTeleporter), "beamUpPlayer")), transpiler: new HarmonyMethod(patchType, "ST_beamUpPlayer_Transpiler", (Type[])null));
             val.Patch(AccessTools.EnumeratorMoveNext(AccessTools.Method(typeof(ShipTeleporter), "beamOutPlayer")), transpiler: new HarmonyMethod(patchType, "ST_beamOutPlayer_Transpiler", (Type[])null));
             val.Patch(AccessTools.Method(typeof(GameNetworkManager), "Start", (Type[])null, (Type[])null), postfix: new HarmonyMethod(patchType, "GNM_Start_Postfix", (Type[])null));
             val.Patch(AccessTools.Method(typeof(StartOfRound), "Start", (Type[])null, (Type[])null), postfix: new HarmonyMethod(patchType, "SOR_Start_Postfix", (Type[])null));
-            val.Patch(AccessTools.Method(typeof(RemoteProp), "ItemActivate", (Type[])null, (Type[])null), postfix: new HarmonyMethod(patchType, "RP_ItemActivate_Postfix", (Type[])null));
+            if (Config.remoteScrapRBFlashEnabled?.Value ?? true)
+                val.Patch(AccessTools.Method(typeof(RemoteProp), "ItemActivate", (Type[])null, (Type[])null), postfix: new HarmonyMethod(patchType, "RP_ItemActivate_Postfix", (Type[])null));
 #if DEBUG
             Plugin.MLogS.LogInfo("HarmonyPatches is loaded!");
 #endif
@@ -34,10 +37,11 @@ namespace EnhancedRadarBooster
         {
             if (__instance.targetedPlayer == null)
             {
-                __instance.mapCamera.nearClipPlane = defaultNearClipPlane / 2f;
-                __instance.mapCamera.farClipPlane = defaultFarClipPlane * 2;
-                StartOfRound.Instance.radarCanvas.planeDistance = defaultNearClipPlane / 2f + 0.05f;
-                __instance.mapCamera.orthographicSize = defaultOrthographicSize * 2;
+                float mult = Config.mapRangeRBFlashMultiplier?.Value ?? 2f;
+                __instance.mapCamera.nearClipPlane = defaultNearClipPlane / mult;
+                __instance.mapCamera.farClipPlane = defaultFarClipPlane * mult;
+                StartOfRound.Instance.radarCanvas.planeDistance = defaultNearClipPlane / mult + 0.05f;
+                __instance.mapCamera.orthographicSize = defaultOrthographicSize * mult;
             }
             else
             {
@@ -150,17 +154,23 @@ namespace EnhancedRadarBooster
             }
             if (startIndex > -1 && endIndex > -1)
             {
-                List<CodeInstruction> instructionsToInsert = new List<CodeInstruction>();
-                instructionsToInsert.Add(new CodeInstruction(OpCodes.Ldloc_S, 8));
-                instructionsToInsert.Add(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(HarmonyPatches), "VectorToRadarBooster")));
-                instructionsToInsert.Add(new CodeInstruction(OpCodes.Stloc_S, 8));
-                codes.InsertRange(endIndex + 1, instructionsToInsert);
+                if (Config.itpToRBEnabled?.Value ?? true)
+                {
+                    List<CodeInstruction> instructionsToInsert = new List<CodeInstruction>();
+                    instructionsToInsert.Add(new CodeInstruction(OpCodes.Ldloc_S, 8));
+                    instructionsToInsert.Add(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(HarmonyPatches), "VectorToRadarBooster")));
+                    instructionsToInsert.Add(new CodeInstruction(OpCodes.Stloc_S, 8));
+                    codes.InsertRange(endIndex + 1, instructionsToInsert);
+                }
 
-                List<CodeInstruction> instructionsToInsert2 = new List<CodeInstruction>();
-                instructionsToInsert2.Add(new CodeInstruction(OpCodes.Ldloc_1));
-                instructionsToInsert2.Add(new CodeInstruction(OpCodes.Ldfld, AccessTools.Field(typeof(ShipTeleporter), "teleporterPosition")));
-                instructionsToInsert2.Add(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(HarmonyPatches), "beamOutRadarBooster")));
-                codes.InsertRange(codes.Count() - 2, instructionsToInsert2);
+                if (Config.itpRBEnabled?.Value ?? true)
+                {
+                    List<CodeInstruction> instructionsToInsert2 = new List<CodeInstruction>();
+                    instructionsToInsert2.Add(new CodeInstruction(OpCodes.Ldloc_1));
+                    instructionsToInsert2.Add(new CodeInstruction(OpCodes.Ldfld, AccessTools.Field(typeof(ShipTeleporter), "teleporterPosition")));
+                    instructionsToInsert2.Add(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(HarmonyPatches), "beamOutRadarBooster")));
+                    codes.InsertRange(codes.Count() - 2, instructionsToInsert2);
+                }
             }
             return codes.AsEnumerable();
         }
@@ -181,7 +191,7 @@ namespace EnhancedRadarBooster
 
         public static void RP_ItemActivate_Postfix(RemoteProp __instance)
         {
-            Collider[] colliders = Physics.OverlapSphere(__instance.transform.position, 16f);
+            Collider[] colliders = Physics.OverlapSphere(__instance.transform.position, Config.remoteScrapRBFlashRange?.Value ?? 16f);
             foreach (Collider collider in colliders)
             {
                 RadarBoosterItem component = collider.gameObject.GetComponent<RadarBoosterItem>();

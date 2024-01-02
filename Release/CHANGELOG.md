@@ -1,3 +1,6 @@
+**1.5.0**
+- Addition of Config.
+
 **1.4.1**
 - Remote scrap can trigger Radar Booster Flash in it range.
 

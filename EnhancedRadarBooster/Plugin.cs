@@ -5,6 +5,7 @@ using BepInEx.Logging;
 using UnityEngine;
 using System.IO;
 using System.Reflection;
+using BepInEx.Configuration;
 
 namespace EnhancedRadarBooster
 {
@@ -17,6 +18,7 @@ namespace EnhancedRadarBooster
         public static Plugin instance;
 
         public static ManualLogSource MLogS;
+        public static ConfigFile config;
         public GameObject enhancedRadarBoosterNetworkManager;
 
         private void Awake()
@@ -36,6 +38,8 @@ namespace EnhancedRadarBooster
             }
 
             MLogS = BepInEx.Logging.Logger.CreateLogSource(MOD_GUID);
+            config = Config;
+            EnhancedRadarBooster.Config.Load();
             instance = this;
             try
             {
