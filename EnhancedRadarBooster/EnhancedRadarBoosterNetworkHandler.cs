@@ -19,10 +19,6 @@ namespace EnhancedRadarBooster
             {
                 EnhancedRadarBoosterNetworkHandler.instance.TeleportRadarBoosterClientRpc(item, position, isEnable);
             }
-            //else
-            //{
-            //    EnhancedRadarBoosterNetworkHandler.instance.TeleportRadarBoosterServerRpc(item, position, isEnable);
-            //}
         }
 
         [ServerRpc(RequireOwnership = false)]

@@ -55,8 +55,7 @@ namespace EnhancedRadarBooster
 
         private void LoadBundle()
         {
-            string assetDir = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "enhancedradarbooster");
-            AssetBundle bundle = AssetBundle.LoadFromFile(assetDir);
+            AssetBundle bundle = AssetBundle.LoadFromStream(Assembly.GetExecutingAssembly().GetManifestResourceStream("EnhancedRadarBooster.Assets.enhancedradarbooster"));
             enhancedRadarBoosterNetworkManager = bundle.LoadAsset<GameObject>("Assets/Mods/EnhancedRadarBooster/EnhancedRadarBoosterNetworkManager.prefab");
             enhancedRadarBoosterNetworkManager.AddComponent<EnhancedRadarBoosterNetworkHandler>();
         }
