@@ -1,3 +1,6 @@
+**1.5.1**
+- Description Updated
+
 **1.5.0**
 - Addition of Config.
 

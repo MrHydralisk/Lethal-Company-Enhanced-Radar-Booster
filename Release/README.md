@@ -16,3 +16,6 @@ All features can be enabled/disabled in Config.
 * Range increase is fully client-sided and can be used anywhere.
 * Teleportation will require all clients to have it installed to it getting desync. It won't cause errors, if installed only on one client, but you will see Radar Booster being teleported and interacted, but others will see it still being on same place. Won't cause errors.
 * Remote scrap is client-sided, but if want everyone to be able to use it, then require all clients.
+# My Other Mods
+* [Enhanced Lockpicker](https://thunderstore.io/c/lethal-company/p/MrHydralisk/EnhancedLockpicker/)
+* [Save Our Loot](https://thunderstore.io/c/lethal-company/p/MrHydralisk/SaveOurLoot/)
