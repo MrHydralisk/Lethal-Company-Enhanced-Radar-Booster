@@ -1,3 +1,6 @@
+**1.5.2**
+- Description Updated
+
 **1.5.1**
 - Description Updated
 - Asset file now part of .dll

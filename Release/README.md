@@ -19,3 +19,4 @@ All features can be enabled/disabled in Config.
 # My Other Mods
 * [Enhanced Lockpicker](https://thunderstore.io/c/lethal-company/p/MrHydralisk/EnhancedLockpicker/)
 * [Save Our Loot](https://thunderstore.io/c/lethal-company/p/MrHydralisk/SaveOurLoot/)
+* [Majority Vote](https://thunderstore.io/c/lethal-company/p/MrHydralisk/MajorityVote/)

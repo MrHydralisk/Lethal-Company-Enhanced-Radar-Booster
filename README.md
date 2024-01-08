@@ -19,3 +19,4 @@ All features can be enabled/disabled in Config.
 # My Other Mods
 * [Enhanced Lockpicker](https://github.com/MrHydralisk/Lethal-Company-Enhanced-Lockpicker)
 * [Save Our Loot](https://github.com/MrHydralisk/Lethal-Company-Save-Our-Loot)
+* [Majority Vote](https://github.com/MrHydralisk/Lethal-Company-Majority-Vote)
