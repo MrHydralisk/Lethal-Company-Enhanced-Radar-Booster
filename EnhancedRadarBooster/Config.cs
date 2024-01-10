@@ -27,7 +27,7 @@ namespace EnhancedRadarBooster
             itpRBEnabled = Plugin.config.Bind<bool>("Teleportation", "ITpRBEnabled", true, "Will Radar Booster be teleported to random location in facility by Inverse Teleporter?\n[All Clients]");
             itpToRBEnabled = Plugin.config.Bind<bool>("Teleportation", "ITpToRBEnabled", true, "When Radar Booster selected on Ship Monitor and Inverse Teleporter activated, will Player be teleported to selected Radar Booster instead of random location?\n[All Clients]");
 
-            remoteScrapRBFlashEnabled = Plugin.config.Bind<bool>("Remote", "RemoteScrapRBFlashEnabled", true, "Can Remote scrap trigger Radar Booster Flash?\n[One Client]");
+            remoteScrapRBFlashEnabled = Plugin.config.Bind<bool>("Remote", "RemoteScrapRBFlashEnabled", true, "Can Remote scrap trigger Radar Booster Flash?\n[One Client, but will make it work for everyone in lobby even without being host]");
             remoteScrapRBFlashRange = Plugin.config.Bind<int>("Remote", "RemoteScrapRBFlashRange", 16, "Radius around player with Remote in which all Radar Boosters Flash will be triggered.\nSuggested values between 1-20.");
         }
     }

@@ -1,3 +1,6 @@
+**1.5.3**
+- Fixed issue with only enabled client-side features not allowing joining unmodded lobby.
+
 **1.5.2**
 - Description Updated
 
