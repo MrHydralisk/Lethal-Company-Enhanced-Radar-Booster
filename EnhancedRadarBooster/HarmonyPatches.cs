@@ -2,9 +2,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Reflection.Emit;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.AI;
 
 namespace EnhancedRadarBooster
 {
@@ -64,7 +66,7 @@ namespace EnhancedRadarBooster
                 EnhancedRadarBoosterNetworkHandler.instance.TeleportRadarBoosterRpc(component.GetComponent<NetworkObject>(), position3, false);
             }
         }
-        public static IEnumerable<CodeInstruction> ST_beamUpPlayer_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator il)
+        public static IEnumerable<CodeInstruction> ST_beamUpPlayer_Transpiler(IEnumerable<CodeInstruction> instructions)
         {
             int startIndex = -1;
             List<CodeInstruction> codes = new List<CodeInstruction>(instructions);
@@ -101,7 +103,7 @@ namespace EnhancedRadarBooster
 #endif
         }
 
-        public static void beamOutRadarBooster(Transform teleporterPosition)
+        public static void beamOutRadarBooster(Transform teleporterPosition, System.Random shipTeleporterSeed)
         {
             Collider[] colliders = Physics.OverlapSphere(teleporterPosition.position, 2f);
             foreach (Collider collider in colliders)
@@ -109,8 +111,8 @@ namespace EnhancedRadarBooster
                 RadarBoosterItem component = collider.gameObject.GetComponent<RadarBoosterItem>();
                 if (component != null)
                 {
-                    Vector3 position3 = RoundManager.Instance.insideAINodes[UnityEngine.Random.Range(0, RoundManager.Instance.insideAINodes.Length)].transform.position;
-                    position3 = RoundManager.Instance.GetRandomNavMeshPositionInRadiusSpherical(position3);
+                    Vector3 position3 = RoundManager.Instance.insideAINodes[shipTeleporterSeed.Next(0, RoundManager.Instance.insideAINodes.Length)].transform.position;
+                    position3 = RoundManager.Instance.GetRandomNavMeshPositionInBoxPredictable(position3, randomSeed: shipTeleporterSeed);
                     EnhancedRadarBoosterNetworkHandler.instance.TeleportRadarBoosterRpc(component.GetComponent<NetworkObject>(), position3, true);
                 }
             }
@@ -128,7 +130,7 @@ namespace EnhancedRadarBooster
             return current;
         }
 
-        public static IEnumerable<CodeInstruction> ST_beamOutPlayer_Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator il)
+        public static IEnumerable<CodeInstruction> ST_beamOutPlayer_Transpiler(IEnumerable<CodeInstruction> instructions)
         {
             bool foundMassUsageMethod = false;
             int startIndex = -1;
@@ -136,7 +138,7 @@ namespace EnhancedRadarBooster
             List<CodeInstruction> codes = new List<CodeInstruction>(instructions);
             for (int i = 0; i < codes.Count; i++)
             {
-                if (codes[i].Calls(AccessTools.Method(typeof(RoundManager), "get_Instance")) && (i + 3 < codes.Count) && codes[i+3].Calls(AccessTools.Method(typeof(RoundManager), "get_Instance")))
+                if (codes[i].Calls(AccessTools.Method(typeof(RoundManager), "get_Instance")) && (i + 5 < codes.Count) && codes[i+5].Calls(AccessTools.Method(typeof(RoundManager), "get_Instance")))
                 {
                     startIndex = i;
                     for (int j = startIndex + 1; j < codes.Count; j++)
@@ -166,15 +168,16 @@ namespace EnhancedRadarBooster
                     instructionsToInsert.Add(new CodeInstruction(OpCodes.Stloc_S, 8));
                     codes.InsertRange(endIndex + 1, instructionsToInsert);
                 }
-
-                if (Config.itpRBEnabled?.Value ?? true)
-                {
-                    List<CodeInstruction> instructionsToInsert2 = new List<CodeInstruction>();
-                    instructionsToInsert2.Add(new CodeInstruction(OpCodes.Ldloc_1));
-                    instructionsToInsert2.Add(new CodeInstruction(OpCodes.Ldfld, AccessTools.Field(typeof(ShipTeleporter), "teleporterPosition")));
-                    instructionsToInsert2.Add(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(HarmonyPatches), "beamOutRadarBooster")));
-                    codes.InsertRange(codes.Count() - 2, instructionsToInsert2);
-                }
+            }
+            if (Config.itpRBEnabled?.Value ?? true)
+            {
+                List<CodeInstruction> instructionsToInsert2 = new List<CodeInstruction>();
+                instructionsToInsert2.Add(new CodeInstruction(OpCodes.Ldloc_1));
+                instructionsToInsert2.Add(new CodeInstruction(OpCodes.Ldfld, AccessTools.Field(typeof(ShipTeleporter), "teleporterPosition")));
+                instructionsToInsert2.Add(new CodeInstruction(OpCodes.Ldloc_1));
+                instructionsToInsert2.Add(new CodeInstruction(OpCodes.Ldfld, AccessTools.Field(typeof(ShipTeleporter), "shipTeleporterSeed")));
+                instructionsToInsert2.Add(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(HarmonyPatches), "beamOutRadarBooster")));
+                codes.InsertRange(codes.Count() - 2, instructionsToInsert2);
             }
             return codes.AsEnumerable();
         }

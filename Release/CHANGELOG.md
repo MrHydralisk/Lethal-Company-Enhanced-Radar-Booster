@@ -1,3 +1,7 @@
+**1.5.4**
+- Updated to Lethal Company v49.
+- Fixed issue of Inverse Teleportation features not working on v49.
+
 **1.5.3**
 - Fixed issue with only enabled client-side features not allowing joining unmodded lobby.
 
