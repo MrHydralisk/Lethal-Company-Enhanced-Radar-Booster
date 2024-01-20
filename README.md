@@ -11,7 +11,7 @@ Radar Booster now fits it name and cover bigger area, than employee's transmitte
 * When Radar Booster selected on Ship Monitor and Inverse Teleporter activated Player will be teleported to selected Radar Booster.
 * Remote scrap can trigger Radar Booster Flash in it range. Range adjustable in Config.
 
-All features can be enabled/disabled in Config.
+All features can be enabled/disabled in Config. Config can be synchronized between Host and Client.
 # Client/Server
 * Range increase is fully client-sided and can be used anywhere.
 * Teleportation will require all clients to have it installed to it getting desync. It won't cause errors, if installed only on one client, but you will see Radar Booster being teleported and interacted, but others will see it still being on same place. Won't cause errors.

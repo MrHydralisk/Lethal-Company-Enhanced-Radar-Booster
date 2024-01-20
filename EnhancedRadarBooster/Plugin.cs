@@ -3,7 +3,6 @@ using System.Runtime.CompilerServices;
 using System;
 using BepInEx.Logging;
 using UnityEngine;
-using System.IO;
 using System.Reflection;
 using BepInEx.Configuration;
 
@@ -12,7 +11,7 @@ namespace EnhancedRadarBooster
     [BepInPlugin(MOD_GUID, MOD_NAME, PluginInfo.PLUGIN_VERSION)]
     public class Plugin : BaseUnityPlugin
     {
-        private const string MOD_GUID = "MrHydralisk.EnhancedRadarBooster";
+        public const string MOD_GUID = "MrHydralisk.EnhancedRadarBooster";
         private const string MOD_NAME = "Enhanced Radar Booster";
 
         public static Plugin instance;
@@ -39,7 +38,7 @@ namespace EnhancedRadarBooster
 
             MLogS = BepInEx.Logging.Logger.CreateLogSource(MOD_GUID);
             config = Config;
-            EnhancedRadarBooster.Config.Load();
+            EnhancedRadarBooster.Config.Bind();
             instance = this;
             try
             {

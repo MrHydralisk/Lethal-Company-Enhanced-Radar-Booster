@@ -1,3 +1,6 @@
+**1.6.0**
+- Config can be synchronized across all clients. MapRange settings names fixed.
+
 **1.5.4**
 - Updated to Lethal Company v49.
 - Fixed issue of Inverse Teleportation features not working on v49.

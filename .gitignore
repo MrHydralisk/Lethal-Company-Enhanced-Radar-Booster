@@ -364,3 +364,4 @@ FodyWeavers.xsd
 *.sln.iml
 # Release Archive for Thunderstore
 Release/*.zip
+NetcoderPatchMod.bat

@@ -2,11 +2,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Reflection.Emit;
 using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.AI;
+using static Unity.Netcode.CustomMessagingManager;
 
 namespace EnhancedRadarBooster
 {
@@ -21,19 +20,20 @@ namespace EnhancedRadarBooster
         {
             patchType = typeof(HarmonyPatches);
             Harmony val = new Harmony("LethalCompany.MrHydralisk.EnhancedRadarBooster");
-            if (Config.mapRangeRBFlashEnabled?.Value ?? true)
+            if (Config.mapRangeRBEnabledValue)
                 val.Patch(AccessTools.Method(typeof(ManualCameraRenderer), "MapCameraFocusOnPosition", (Type[])null, (Type[])null), postfix: new HarmonyMethod(patchType, "MCR_MapCameraFocusOnPosition_Postfix", (Type[])null));
-            if (Config.tpRBEnabled?.Value ?? true)
+            if (Config.tpRBEnabledValue)
                 val.Patch(AccessTools.EnumeratorMoveNext(AccessTools.Method(typeof(ShipTeleporter), "beamUpPlayer")), transpiler: new HarmonyMethod(patchType, "ST_beamUpPlayer_Transpiler", (Type[])null));
-            if ((Config.itpToRBEnabled?.Value ?? true) || (Config.itpRBEnabled?.Value ?? true))
+            if ((Config.itpToRBEnabledValue) || (Config.itpRBEnabledValue))
                 val.Patch(AccessTools.EnumeratorMoveNext(AccessTools.Method(typeof(ShipTeleporter), "beamOutPlayer")), transpiler: new HarmonyMethod(patchType, "ST_beamOutPlayer_Transpiler", (Type[])null));
-            if ((Config.tpRBEnabled?.Value ?? true) || (Config.itpToRBEnabled?.Value ?? true))
+            if ((Config.tpRBEnabledValue) || (Config.itpToRBEnabledValue))
             {
                 val.Patch(AccessTools.Method(typeof(GameNetworkManager), "Start", (Type[])null, (Type[])null), postfix: new HarmonyMethod(patchType, "GNM_Start_Postfix", (Type[])null));
                 val.Patch(AccessTools.Method(typeof(StartOfRound), "Start", (Type[])null, (Type[])null), postfix: new HarmonyMethod(patchType, "SOR_Start_Postfix", (Type[])null));
             }
-            if (Config.remoteScrapRBFlashEnabled?.Value ?? true)
+            if (Config.remoteScrapRBFlashEnabledValue)
                 val.Patch(AccessTools.Method(typeof(RemoteProp), "ItemActivate", (Type[])null, (Type[])null), postfix: new HarmonyMethod(patchType, "RP_ItemActivate_Postfix", (Type[])null));
+            val.Patch(AccessTools.Method(typeof(GameNetcodeStuff.PlayerControllerB), "ConnectClientToPlayerObject", (Type[])null, (Type[])null), postfix: new HarmonyMethod(patchType, "PCB_ConnectClientToPlayerObject_Postfix", (Type[])null));
 #if DEBUG
             Plugin.MLogS.LogInfo("HarmonyPatches is loaded!");
 #endif
@@ -41,18 +41,21 @@ namespace EnhancedRadarBooster
 
         public static void MCR_MapCameraFocusOnPosition_Postfix(ManualCameraRenderer __instance)
         {
-            if (__instance.targetedPlayer == null)
+            if (Config.mapRangeRBEnabledValue)
             {
-                float mult = Config.mapRangeRBFlashMultiplier?.Value ?? 2f;
-                __instance.mapCamera.nearClipPlane = defaultNearClipPlane / mult;
-                __instance.mapCamera.farClipPlane = defaultFarClipPlane * mult;
-                StartOfRound.Instance.radarCanvas.planeDistance = defaultNearClipPlane / mult + 0.05f;
-                __instance.mapCamera.orthographicSize = defaultOrthographicSize * mult;
-            }
-            else
-            {
-                __instance.mapCamera.farClipPlane = defaultFarClipPlane;
-                __instance.mapCamera.orthographicSize = defaultOrthographicSize;
+                if (__instance.targetedPlayer == null)
+                {
+                    float mult = Config.mapRangeRBMultiplierValue;
+                    __instance.mapCamera.nearClipPlane = defaultNearClipPlane / mult;
+                    __instance.mapCamera.farClipPlane = defaultFarClipPlane * mult;
+                    StartOfRound.Instance.radarCanvas.planeDistance = defaultNearClipPlane / mult + 0.05f;
+                    __instance.mapCamera.orthographicSize = defaultOrthographicSize * mult;
+                }
+                else
+                {
+                    __instance.mapCamera.farClipPlane = defaultFarClipPlane;
+                    __instance.mapCamera.orthographicSize = defaultOrthographicSize;
+                }
             }
         }
 
@@ -60,7 +63,7 @@ namespace EnhancedRadarBooster
         {
             ManualCameraRenderer MCR = StartOfRound.Instance.mapScreen;
             RadarBoosterItem component;
-            if (MCR.targetTransformIndex < MCR.radarTargets.Count && MCR.radarTargets[MCR.targetTransformIndex].isNonPlayer && (component = MCR.radarTargets[MCR.targetTransformIndex].transform.gameObject.GetComponent<RadarBoosterItem>()) != null)
+            if (Config.tpRBEnabledValue && MCR.targetTransformIndex < MCR.radarTargets.Count && MCR.radarTargets[MCR.targetTransformIndex].isNonPlayer && (component = MCR.radarTargets[MCR.targetTransformIndex].transform.gameObject.GetComponent<RadarBoosterItem>()) != null)
             {
                 Vector3 position3 = teleporterPosition.position;
                 EnhancedRadarBoosterNetworkHandler.instance.TeleportRadarBoosterRpc(component.GetComponent<NetworkObject>(), position3, false);
@@ -105,15 +108,18 @@ namespace EnhancedRadarBooster
 
         public static void beamOutRadarBooster(Transform teleporterPosition, System.Random shipTeleporterSeed)
         {
-            Collider[] colliders = Physics.OverlapSphere(teleporterPosition.position, 2f);
-            foreach (Collider collider in colliders)
+            if (Config.itpRBEnabledValue)
             {
-                RadarBoosterItem component = collider.gameObject.GetComponent<RadarBoosterItem>();
-                if (component != null)
+                Collider[] colliders = Physics.OverlapSphere(teleporterPosition.position, 2f);
+                foreach (Collider collider in colliders)
                 {
-                    Vector3 position3 = RoundManager.Instance.insideAINodes[shipTeleporterSeed.Next(0, RoundManager.Instance.insideAINodes.Length)].transform.position;
-                    position3 = RoundManager.Instance.GetRandomNavMeshPositionInBoxPredictable(position3, randomSeed: shipTeleporterSeed);
-                    EnhancedRadarBoosterNetworkHandler.instance.TeleportRadarBoosterRpc(component.GetComponent<NetworkObject>(), position3, true);
+                    RadarBoosterItem component = collider.gameObject.GetComponent<RadarBoosterItem>();
+                    if (component != null)
+                    {
+                        Vector3 position3 = RoundManager.Instance.insideAINodes[shipTeleporterSeed.Next(0, RoundManager.Instance.insideAINodes.Length)].transform.position;
+                        position3 = RoundManager.Instance.GetRandomNavMeshPositionInBoxPredictable(position3, randomSeed: shipTeleporterSeed);
+                        EnhancedRadarBoosterNetworkHandler.instance.TeleportRadarBoosterRpc(component.GetComponent<NetworkObject>(), position3, true);
+                    }
                 }
             }
         }
@@ -122,7 +128,7 @@ namespace EnhancedRadarBooster
         {
             ManualCameraRenderer MCR = StartOfRound.Instance.mapScreen;
             RadarBoosterItem component;
-            if (MCR.targetTransformIndex < MCR.radarTargets.Count && MCR.radarTargets[MCR.targetTransformIndex].isNonPlayer && (component = MCR.radarTargets[MCR.targetTransformIndex].transform.gameObject.GetComponent<RadarBoosterItem>()) != null)
+            if (Config.itpToRBEnabledValue && MCR.targetTransformIndex < MCR.radarTargets.Count && MCR.radarTargets[MCR.targetTransformIndex].isNonPlayer && (component = MCR.radarTargets[MCR.targetTransformIndex].transform.gameObject.GetComponent<RadarBoosterItem>()) != null)
             {
                 current = component.transform.position;
                 current = RoundManager.Instance.GetNavMeshPosition(current, sampleRadius: 0.5f);
@@ -160,7 +166,7 @@ namespace EnhancedRadarBooster
             }
             if (startIndex > -1 && endIndex > -1)
             {
-                if (Config.itpToRBEnabled?.Value ?? true)
+                if (Config.itpToRBEnabledValue)
                 {
                     List<CodeInstruction> instructionsToInsert = new List<CodeInstruction>();
                     instructionsToInsert.Add(new CodeInstruction(OpCodes.Ldloc_S, 8));
@@ -169,7 +175,7 @@ namespace EnhancedRadarBooster
                     codes.InsertRange(endIndex + 1, instructionsToInsert);
                 }
             }
-            if (Config.itpRBEnabled?.Value ?? true)
+            if (Config.itpRBEnabledValue)
             {
                 List<CodeInstruction> instructionsToInsert2 = new List<CodeInstruction>();
                 instructionsToInsert2.Add(new CodeInstruction(OpCodes.Ldloc_1));
@@ -198,14 +204,60 @@ namespace EnhancedRadarBooster
 
         public static void RP_ItemActivate_Postfix(RemoteProp __instance)
         {
-            Collider[] colliders = Physics.OverlapSphere(__instance.transform.position, Config.remoteScrapRBFlashRange?.Value ?? 16f);
-            foreach (Collider collider in colliders)
+            if (Config.remoteScrapRBFlashEnabledValue)
             {
-                RadarBoosterItem component = collider.gameObject.GetComponent<RadarBoosterItem>();
-                if (component != null)
+                Collider[] colliders = Physics.OverlapSphere(__instance.transform.position, Config.remoteScrapRBFlashRangeValue);
+                foreach (Collider collider in colliders)
                 {
-                    component.FlashAndSync();
+                    RadarBoosterItem component = collider.gameObject.GetComponent<RadarBoosterItem>();
+                    if (component != null)
+                    {
+                        component.FlashAndSync();
+                    }
                 }
+            }
+        }
+
+        public static void PCB_ConnectClientToPlayerObject_Postfix()
+        {
+            if (NetworkManager.Singleton.IsServer)
+            {
+                NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Plugin.MOD_GUID + ".ConfigSync", new HandleNamedMessageDelegate(ConfigSyncRequest));
+            }
+            else
+            {
+                NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Plugin.MOD_GUID + ".ReceiveConfigSync", new HandleNamedMessageDelegate(ConfigSync));
+                if (NetworkManager.Singleton.IsClient)
+                {
+                    Plugin.MLogS.LogInfo("Sending config sync request to Server.");
+                    NetworkManager.Singleton.CustomMessagingManager.SendNamedMessage(Plugin.MOD_GUID + ".ConfigSync", 0ul, new FastBufferWriter(16, Unity.Collections.Allocator.Temp), NetworkDelivery.ReliableSequenced);
+                }
+                else
+                {
+                    Plugin.MLogS.LogWarning("Error Sending config sync request to Server.");
+                }
+            }
+        }
+
+        public static void ConfigSyncRequest(ulong clientId, FastBufferReader reader)
+        {
+            if (NetworkManager.Singleton.IsServer)
+            {
+                Plugin.MLogS.LogInfo($"Receiving config sync request from client {clientId}. Sending config sync to Client.");
+                NetworkManager.Singleton.CustomMessagingManager.SendNamedMessage(Plugin.MOD_GUID + ".ReceiveConfigSync", clientId, Config.WriteBuff(), NetworkDelivery.ReliableSequenced);
+            }
+        }
+
+        public static void ConfigSync(ulong clientId, FastBufferReader reader)
+        {
+            if (reader.TryBeginRead(4))
+            {
+                Plugin.MLogS.LogInfo("Receiving config sync from Server.");
+                Config.ReadBuff(reader);
+            }
+            else
+            {
+                Plugin.MLogS.LogWarning("Error Receiving config sync from Server.");
             }
         }
     }
