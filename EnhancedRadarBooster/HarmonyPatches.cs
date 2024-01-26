@@ -20,19 +20,12 @@ namespace EnhancedRadarBooster
         {
             patchType = typeof(HarmonyPatches);
             Harmony val = new Harmony("LethalCompany.MrHydralisk.EnhancedRadarBooster");
-            if (Config.mapRangeRBEnabledValue)
-                val.Patch(AccessTools.Method(typeof(ManualCameraRenderer), "MapCameraFocusOnPosition", (Type[])null, (Type[])null), postfix: new HarmonyMethod(patchType, "MCR_MapCameraFocusOnPosition_Postfix", (Type[])null));
-            if (Config.tpRBEnabledValue)
-                val.Patch(AccessTools.EnumeratorMoveNext(AccessTools.Method(typeof(ShipTeleporter), "beamUpPlayer")), transpiler: new HarmonyMethod(patchType, "ST_beamUpPlayer_Transpiler", (Type[])null));
-            if ((Config.itpToRBEnabledValue) || (Config.itpRBEnabledValue))
-                val.Patch(AccessTools.EnumeratorMoveNext(AccessTools.Method(typeof(ShipTeleporter), "beamOutPlayer")), transpiler: new HarmonyMethod(patchType, "ST_beamOutPlayer_Transpiler", (Type[])null));
-            if ((Config.tpRBEnabledValue) || (Config.itpToRBEnabledValue))
-            {
-                val.Patch(AccessTools.Method(typeof(GameNetworkManager), "Start", (Type[])null, (Type[])null), postfix: new HarmonyMethod(patchType, "GNM_Start_Postfix", (Type[])null));
-                val.Patch(AccessTools.Method(typeof(StartOfRound), "Start", (Type[])null, (Type[])null), postfix: new HarmonyMethod(patchType, "SOR_Start_Postfix", (Type[])null));
-            }
-            if (Config.remoteScrapRBFlashEnabledValue)
-                val.Patch(AccessTools.Method(typeof(RemoteProp), "ItemActivate", (Type[])null, (Type[])null), postfix: new HarmonyMethod(patchType, "RP_ItemActivate_Postfix", (Type[])null));
+            val.Patch(AccessTools.Method(typeof(ManualCameraRenderer), "MapCameraFocusOnPosition", (Type[])null, (Type[])null), postfix: new HarmonyMethod(patchType, "MCR_MapCameraFocusOnPosition_Postfix", (Type[])null));
+            val.Patch(AccessTools.EnumeratorMoveNext(AccessTools.Method(typeof(ShipTeleporter), "beamUpPlayer")), transpiler: new HarmonyMethod(patchType, "ST_beamUpPlayer_Transpiler", (Type[])null));
+            val.Patch(AccessTools.EnumeratorMoveNext(AccessTools.Method(typeof(ShipTeleporter), "beamOutPlayer")), transpiler: new HarmonyMethod(patchType, "ST_beamOutPlayer_Transpiler", (Type[])null));
+            val.Patch(AccessTools.Method(typeof(GameNetworkManager), "Start", (Type[])null, (Type[])null), postfix: new HarmonyMethod(patchType, "GNM_Start_Postfix", (Type[])null));
+            val.Patch(AccessTools.Method(typeof(StartOfRound), "Start", (Type[])null, (Type[])null), postfix: new HarmonyMethod(patchType, "SOR_Start_Postfix", (Type[])null));
+            val.Patch(AccessTools.Method(typeof(RemoteProp), "ItemActivate", (Type[])null, (Type[])null), postfix: new HarmonyMethod(patchType, "RP_ItemActivate_Postfix", (Type[])null));
             val.Patch(AccessTools.Method(typeof(GameNetcodeStuff.PlayerControllerB), "ConnectClientToPlayerObject", (Type[])null, (Type[])null), postfix: new HarmonyMethod(patchType, "PCB_ConnectClientToPlayerObject_Postfix", (Type[])null));
 #if DEBUG
             Plugin.MLogS.LogInfo("HarmonyPatches is loaded!");
@@ -63,7 +56,7 @@ namespace EnhancedRadarBooster
         {
             ManualCameraRenderer MCR = StartOfRound.Instance.mapScreen;
             RadarBoosterItem component;
-            if (Config.tpRBEnabledValue && MCR.targetTransformIndex < MCR.radarTargets.Count && MCR.radarTargets[MCR.targetTransformIndex].isNonPlayer && (component = MCR.radarTargets[MCR.targetTransformIndex].transform.gameObject.GetComponent<RadarBoosterItem>()) != null)
+            if ((NetworkManager.Singleton.IsServer || (Config.isHostHaveERBValue)) && Config.eRBNHEnabledValue && Config.tpRBEnabledValue && MCR.targetTransformIndex < MCR.radarTargets.Count && MCR.radarTargets[MCR.targetTransformIndex].isNonPlayer && (component = MCR.radarTargets[MCR.targetTransformIndex].transform.gameObject.GetComponent<RadarBoosterItem>()) != null)
             {
                 Vector3 position3 = teleporterPosition.position;
                 EnhancedRadarBoosterNetworkHandler.instance.TeleportRadarBoosterRpc(component.GetComponent<NetworkObject>(), position3, false);
@@ -108,7 +101,7 @@ namespace EnhancedRadarBooster
 
         public static void beamOutRadarBooster(Transform teleporterPosition, System.Random shipTeleporterSeed)
         {
-            if (Config.itpRBEnabledValue)
+            if ((NetworkManager.Singleton.IsServer || (Config.isHostHaveERBValue)) && Config.eRBNHEnabledValue && Config.itpRBEnabledValue)
             {
                 Collider[] colliders = Physics.OverlapSphere(teleporterPosition.position, 2f);
                 foreach (Collider collider in colliders)
@@ -166,36 +159,31 @@ namespace EnhancedRadarBooster
             }
             if (startIndex > -1 && endIndex > -1)
             {
-                if (Config.itpToRBEnabledValue)
-                {
-                    List<CodeInstruction> instructionsToInsert = new List<CodeInstruction>();
-                    instructionsToInsert.Add(new CodeInstruction(OpCodes.Ldloc_S, 8));
-                    instructionsToInsert.Add(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(HarmonyPatches), "VectorToRadarBooster")));
-                    instructionsToInsert.Add(new CodeInstruction(OpCodes.Stloc_S, 8));
-                    codes.InsertRange(endIndex + 1, instructionsToInsert);
-                }
+                List<CodeInstruction> instructionsToInsert = new List<CodeInstruction>();
+                instructionsToInsert.Add(new CodeInstruction(OpCodes.Ldloc_S, 8));
+                instructionsToInsert.Add(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(HarmonyPatches), "VectorToRadarBooster")));
+                instructionsToInsert.Add(new CodeInstruction(OpCodes.Stloc_S, 8));
+                codes.InsertRange(endIndex + 1, instructionsToInsert);
             }
-            if (Config.itpRBEnabledValue)
-            {
-                List<CodeInstruction> instructionsToInsert2 = new List<CodeInstruction>();
-                instructionsToInsert2.Add(new CodeInstruction(OpCodes.Ldloc_1));
-                instructionsToInsert2.Add(new CodeInstruction(OpCodes.Ldfld, AccessTools.Field(typeof(ShipTeleporter), "teleporterPosition")));
-                instructionsToInsert2.Add(new CodeInstruction(OpCodes.Ldloc_1));
-                instructionsToInsert2.Add(new CodeInstruction(OpCodes.Ldfld, AccessTools.Field(typeof(ShipTeleporter), "shipTeleporterSeed")));
-                instructionsToInsert2.Add(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(HarmonyPatches), "beamOutRadarBooster")));
-                codes.InsertRange(codes.Count() - 2, instructionsToInsert2);
-            }
+            List<CodeInstruction> instructionsToInsert2 = new List<CodeInstruction>();
+            instructionsToInsert2.Add(new CodeInstruction(OpCodes.Ldloc_1));
+            instructionsToInsert2.Add(new CodeInstruction(OpCodes.Ldfld, AccessTools.Field(typeof(ShipTeleporter), "teleporterPosition")));
+            instructionsToInsert2.Add(new CodeInstruction(OpCodes.Ldloc_1));
+            instructionsToInsert2.Add(new CodeInstruction(OpCodes.Ldfld, AccessTools.Field(typeof(ShipTeleporter), "shipTeleporterSeed")));
+            instructionsToInsert2.Add(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(HarmonyPatches), "beamOutRadarBooster")));
+            codes.InsertRange(codes.Count() - 2, instructionsToInsert2);
             return codes.AsEnumerable();
         }
 
         public static void GNM_Start_Postfix(GameNetworkManager __instance)
         {
-            __instance.GetComponent<NetworkManager>().AddNetworkPrefab(Plugin.instance.enhancedRadarBoosterNetworkManager); 
+            if (Config.eRBNHEnabledValue)
+                __instance.GetComponent<NetworkManager>().AddNetworkPrefab(Plugin.instance.enhancedRadarBoosterNetworkManager);
         }
 
         public static void SOR_Start_Postfix(StartOfRound __instance)
         {
-            if (__instance.IsHost)
+            if (__instance.IsHost && Config.eRBNHEnabledValue && ((Config.tpRBEnabledValue) || (Config.itpRBEnabledValue)))
             {
                 GameObject ERBNMObject = GameObject.Instantiate(Plugin.instance.enhancedRadarBoosterNetworkManager);
                 ERBNMObject.GetComponent<NetworkObject>().Spawn(true);
@@ -229,6 +217,7 @@ namespace EnhancedRadarBooster
                 NetworkManager.Singleton.CustomMessagingManager.RegisterNamedMessageHandler(Plugin.MOD_GUID + ".ReceiveConfigSync", new HandleNamedMessageDelegate(ConfigSync));
                 if (NetworkManager.Singleton.IsClient)
                 {
+                    Config.isHostHaveERBValue = false;
                     Plugin.MLogS.LogInfo("Sending config sync request to Server.");
                     NetworkManager.Singleton.CustomMessagingManager.SendNamedMessage(Plugin.MOD_GUID + ".ConfigSync", 0ul, new FastBufferWriter(16, Unity.Collections.Allocator.Temp), NetworkDelivery.ReliableSequenced);
                 }
@@ -253,6 +242,7 @@ namespace EnhancedRadarBooster
             if (reader.TryBeginRead(4))
             {
                 Plugin.MLogS.LogInfo("Receiving config sync from Server.");
+                Config.isHostHaveERBValue = true;
                 Config.ReadBuff(reader);
             }
             else

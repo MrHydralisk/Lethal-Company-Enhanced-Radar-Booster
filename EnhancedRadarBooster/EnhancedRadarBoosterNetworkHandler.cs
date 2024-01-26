@@ -8,9 +8,25 @@ namespace EnhancedRadarBooster
     {
         public static EnhancedRadarBoosterNetworkHandler instance;
 
-        void Awake()
+        public override void OnNetworkSpawn()
         {
+            if (NetworkManager.Singleton.IsHost || NetworkManager.Singleton.IsServer)
+            {
+                if (instance != null && instance.gameObject != null)
+                {
+                    NetworkObject networkObject = instance.gameObject.GetComponent<NetworkObject>();
+
+                    if (networkObject != null)
+                    {
+                        networkObject.Despawn();
+                        Plugin.MLogS.LogInfo("EnhancedRadarBoosterNetworkHandler Despawned");
+                    }
+                }
+            }
+
             instance = this;
+            base.OnNetworkSpawn();
+            Plugin.MLogS.LogInfo("EnhancedRadarBoosterNetworkHandler Spawned");
         }
 
         public void TeleportRadarBoosterRpc(NetworkObjectReference item, Vector3 position, bool isEnable = false)

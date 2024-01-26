@@ -1,3 +1,6 @@
+**1.6.1**
+- Easier way to disable networking in config for playing in lobby without ERB mod.
+
 **1.6.0**
 - Config can be synchronized across all clients. MapRange settings names fixed.
 

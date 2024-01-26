@@ -14,8 +14,11 @@ Radar Booster now fits it name and cover bigger area, than employee's transmitte
 All features can be enabled/disabled in Config. Config can be synchronized between Host and Client.
 # Client/Server
 * Range increase is fully client-sided and can be used anywhere.
-* Teleportation will require all clients to have it installed to it getting desync. It won't cause errors, if installed only on one client, but you will see Radar Booster being teleported and interacted, but others will see it still being on same place. Won't cause errors.
+* Teleportation of Radar Booster will require all clients to have it installed and utilize networking.
+* Teleportation to Radar Booster is client-sided.
 * Remote scrap is client-sided, but will make it work for everyone in lobby even without being host.
+
+If want to join lobby without Enhanced Radar Booster, then disable networking in config to avoid kick due to having different mods.
 # My Other Mods
 * [Enhanced Lockpicker](https://thunderstore.io/c/lethal-company/p/MrHydralisk/EnhancedLockpicker/)
 * [Save Our Loot](https://thunderstore.io/c/lethal-company/p/MrHydralisk/SaveOurLoot/)
