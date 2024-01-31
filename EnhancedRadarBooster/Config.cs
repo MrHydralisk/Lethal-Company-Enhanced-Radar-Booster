@@ -87,7 +87,7 @@ namespace EnhancedRadarBooster
             {
                 LoadFromConfig();
             }
-            FastBufferWriter FBW = new FastBufferWriter((sizeof(bool) * 8) + (sizeof(float) * 2), Unity.Collections.Allocator.Temp);
+            FastBufferWriter FBW = new FastBufferWriter((sizeof(bool) * 9) + (sizeof(float) * 2), Unity.Collections.Allocator.Temp);
             FBW.WriteValueSafe<bool>(eRBNHEnabledValue, default(FastBufferWriter.ForPrimitives));
             FBW.WriteValueSafe<bool>(tpRBEnabledValue, default(FastBufferWriter.ForPrimitives));
             FBW.WriteValueSafe<bool>(itpRBEnabledValue, default(FastBufferWriter.ForPrimitives));

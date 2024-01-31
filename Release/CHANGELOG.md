@@ -1,3 +1,6 @@
+**1.6.2**
+- Buffer size for config sync fix.
+
 **1.6.1**
 - Easier way to disable networking in config for playing in lobby without ERB mod.
 
