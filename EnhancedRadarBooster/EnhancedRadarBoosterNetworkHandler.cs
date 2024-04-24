@@ -58,7 +58,9 @@ namespace EnhancedRadarBooster
             radarBooster.transform.position = position;
             radarBooster.targetFloorPosition = position;
             radarBooster.FallToGround(!isEnable);
-            radarBooster.EnableRadarBooster(isEnable);
+            radarBooster.isInFactory = isEnable;
+            radarBooster.isInShipRoom = !isEnable;
+            radarBooster.UseItemOnClient(isEnable);
             yield return null;
         }
     }

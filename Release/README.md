@@ -19,6 +19,11 @@ All features can be enabled/disabled in Config. Config can be synchronized betwe
 * Remote scrap is client-sided, but will make it work for everyone in lobby even without being host.
 
 If want to join lobby without Enhanced Radar Booster, then disable networking in config to avoid kick due to having different mods.
+# Links
+For feedback can use:
+[My Discord](https://discord.gg/tKsBgzzTsG)
+or Lethal Company Modding thread in mod-releases
+
 # My Other Mods
 * [Enhanced Lockpicker](https://thunderstore.io/c/lethal-company/p/MrHydralisk/EnhancedLockpicker/)
 * [Save Our Loot](https://thunderstore.io/c/lethal-company/p/MrHydralisk/SaveOurLoot/)
