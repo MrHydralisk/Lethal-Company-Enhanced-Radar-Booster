@@ -21,8 +21,7 @@ All features can be enabled/disabled in Config. Config can be synchronized betwe
 If want to join lobby without Enhanced Radar Booster, then disable networking in config to avoid kick due to having different mods.
 # Links
 For feedback can use:
-[My Discord](https://discord.gg/tKsBgzzTsG)
-or Lethal Company Modding thread in mod-releases
+[My Discord](https://discord.gg/tKsBgzzTsG) or Lethal Company Modding thread in mod-releases or Github
 
 # My Other Mods
 * [Enhanced Lockpicker](https://github.com/MrHydralisk/Lethal-Company-Enhanced-Lockpicker)

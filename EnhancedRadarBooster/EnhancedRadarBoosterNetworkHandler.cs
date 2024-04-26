@@ -60,7 +60,10 @@ namespace EnhancedRadarBooster
             radarBooster.FallToGround(!isEnable);
             radarBooster.isInFactory = isEnable;
             radarBooster.isInShipRoom = !isEnable;
-            radarBooster.UseItemOnClient(isEnable);
+            if (radarBooster.isBeingUsed != isEnable)
+            {
+                radarBooster.UseItemOnClient(isEnable);
+            }
             yield return null;
         }
     }

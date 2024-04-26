@@ -1,3 +1,6 @@
+**1.7.1**
+- Fixed Radar Booster disabling after inverse teleportation.
+
 **1.7.0**
 - Update to v50.
 - Fix of compatability with OpenBodyCams mod.
