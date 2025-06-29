@@ -54,16 +54,57 @@ namespace EnhancedRadarBooster
             NetworkObject netObject = null;
             item.TryGet(out netObject);
             RadarBoosterItem radarBooster = netObject.GetComponent<RadarBoosterItem>();
-            radarBooster.startFallingPosition = position;
+#if DEBUG
+            Plugin.MLogS.LogInfo($"TeleportRadarBooster A {radarBooster.startFallingPosition.ToString()} | {radarBooster.transform.position.ToString()} | {radarBooster.transform.localPosition.ToString()} | {radarBooster.targetFloorPosition.ToString()} || {radarBooster.transform?.parent?.ToString() ?? "---"} | {radarBooster.parentObject?.ToString() ?? "---"}");
+#endif
+            Vector3 hitPoint = position;
             radarBooster.transform.position = position;
-            radarBooster.targetFloorPosition = position;
-            radarBooster.FallToGround(!isEnable);
-            radarBooster.isInFactory = isEnable;
-            radarBooster.isInShipRoom = !isEnable;
+            if (isEnable)
+            {
+                radarBooster.isInElevator = false;
+                radarBooster.isInShipRoom = false;
+                radarBooster.isInFactory = true;
+                radarBooster.transform.SetParent(null, worldPositionStays: true);
+            }
+            else
+            {
+                if (StartOfRound.Instance.shipInnerRoomBounds.bounds.Contains(hitPoint))
+                {
+                    radarBooster.isInElevator = true;
+                    radarBooster.isInShipRoom = true;
+                    radarBooster.transform.SetParent(StartOfRound.Instance.elevatorTransform, worldPositionStays: true);
+                }
+                else if (StartOfRound.Instance.shipBounds.bounds.Contains(hitPoint))
+                {
+                    radarBooster.isInElevator = true;
+                    radarBooster.transform.SetParent(StartOfRound.Instance.elevatorTransform, worldPositionStays: true);
+                }
+                else
+                {
+                    radarBooster.transform.SetParent(null, worldPositionStays: true);
+                }
+                radarBooster.isInFactory = false;
+            }
+#if DEBUG
+            Plugin.MLogS.LogInfo($"TeleportRadarBooster B {hitPoint} = {radarBooster.startFallingPosition.ToString()} | {radarBooster.transform.position.ToString()} | {radarBooster.transform.localPosition.ToString()} | {radarBooster.targetFloorPosition.ToString()} || {radarBooster.transform?.parent?.ToString() ?? "---"} | {radarBooster.parentObject?.ToString() ?? "---"}");
+#endif		
+            if (radarBooster.transform.parent != null)
+            {
+                hitPoint = radarBooster.transform.parent.InverseTransformPoint(position);
+            }
+            radarBooster.fallTime = 0f;
+            radarBooster.hasHitGround = false;
+            GameNetworkManager.Instance.localPlayerController.SetItemInElevator(radarBooster.isInElevator, radarBooster.isInShipRoom, radarBooster);
+            radarBooster.startFallingPosition = hitPoint + Vector3.up * 0.07f;
+            radarBooster.targetFloorPosition = hitPoint;
+            radarBooster.EnablePhysics(enable: true);
             if (radarBooster.isBeingUsed != isEnable)
             {
                 radarBooster.UseItemOnClient(isEnable);
             }
+#if DEBUG
+            Plugin.MLogS.LogInfo($"TeleportRadarBooster C {radarBooster.startFallingPosition.ToString()} | {radarBooster.transform.position.ToString()} | {radarBooster.transform.localPosition.ToString()} | {radarBooster.targetFloorPosition.ToString()} || {radarBooster.transform?.parent?.ToString() ?? "---"} | {radarBooster.parentObject?.ToString() ?? "---"}");
+#endif
             yield return null;
         }
     }

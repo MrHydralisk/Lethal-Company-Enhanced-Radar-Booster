@@ -54,6 +54,9 @@ namespace EnhancedRadarBooster
 
         public static void beamUpRadarBooster(Transform teleporterPosition)
         {
+#if DEBUG
+            Plugin.MLogS.LogInfo($"beamUpRadarBooster to {teleporterPosition.position.ToString()}");
+#endif
             ManualCameraRenderer MCR = StartOfRound.Instance.mapScreen;
             RadarBoosterItem component;
             if ((NetworkManager.Singleton.IsServer || (Config.isHostHaveERBValue)) && Config.eRBNHEnabledValue && Config.tpRBEnabledValue && MCR.targetTransformIndex < MCR.radarTargets.Count && MCR.radarTargets[MCR.targetTransformIndex].isNonPlayer && (component = MCR.radarTargets[MCR.targetTransformIndex].transform.gameObject.GetComponent<RadarBoosterItem>()) != null)
@@ -88,15 +91,15 @@ namespace EnhancedRadarBooster
                 instructionsToInsert.Add(new CodeInstruction(OpCodes.Ldloc_1));
                 instructionsToInsert.Add(new CodeInstruction(OpCodes.Ldfld, AccessTools.Field(typeof(ShipTeleporter), "teleporterPosition")));
                 instructionsToInsert.Add(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(HarmonyPatches), "beamUpRadarBooster")));
-                codes.InsertRange(startIndex + 2, instructionsToInsert);
+                codes.InsertRange(startIndex + 1, instructionsToInsert);
 #if DEBUG
                 Plugin.MLogS.LogInfo(string.Join("\n", codes.GetRange(startIndex, 5 + instructionsToInsert.Count() + 1).Select(x => x.ToString())));
 #endif
             }
-            return codes.AsEnumerable();
 #if DEBUG
-            Plugin.MLogS.LogInfo(ST_beamUpPlayer_Transpiler");
+            Plugin.MLogS.LogInfo("ST_beamUpPlayer_Transpiler");
 #endif
+            return codes.AsEnumerable();
         }
 
         public static void beamOutRadarBooster(Transform teleporterPosition, System.Random shipTeleporterSeed)

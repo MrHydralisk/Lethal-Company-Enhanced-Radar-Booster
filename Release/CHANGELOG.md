@@ -1,3 +1,7 @@
+**1.8.0**
+- Rebuild to fit files v72.
+- Rewrote Radar Booster teleportation.
+
 **1.7.1**
 - Fixed Radar Booster disabling after inverse teleportation.
 
