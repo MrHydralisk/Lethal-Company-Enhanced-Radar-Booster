@@ -84,6 +84,7 @@ namespace EnhancedRadarBooster
                     radarBooster.transform.SetParent(null, worldPositionStays: true);
                 }
                 radarBooster.isInFactory = false;
+                hitPoint += new Vector3(Random.Range(-0.5f, 0.5f), 0f, Random.Range(-0.5f, 0.5f));
             }
 #if DEBUG
             Plugin.MLogS.LogInfo($"TeleportRadarBooster B {hitPoint} = {radarBooster.startFallingPosition.ToString()} | {radarBooster.transform.position.ToString()} | {radarBooster.transform.localPosition.ToString()} | {radarBooster.targetFloorPosition.ToString()} || {radarBooster.transform?.parent?.ToString() ?? "---"} | {radarBooster.parentObject?.ToString() ?? "---"}");
