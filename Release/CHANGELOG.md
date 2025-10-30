@@ -1,3 +1,6 @@
+*1.8.1**
+- Rebuild to fit files v73.
+
 **1.8.0**
 - Rebuild to fit files v72.
 - Rewrote Radar Booster teleportation.

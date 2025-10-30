@@ -57,6 +57,7 @@ namespace EnhancedRadarBooster
 #if DEBUG
             Plugin.MLogS.LogInfo($"beamUpRadarBooster to {teleporterPosition.position.ToString()}");
 #endif
+            Plugin.MLogS.LogInfo($"beamUpRadarBooster to {teleporterPosition.position.ToString()}");
             ManualCameraRenderer MCR = StartOfRound.Instance.mapScreen;
             RadarBoosterItem component;
             if ((NetworkManager.Singleton.IsServer || (Config.isHostHaveERBValue)) && Config.eRBNHEnabledValue && Config.tpRBEnabledValue && MCR.targetTransformIndex < MCR.radarTargets.Count && MCR.radarTargets[MCR.targetTransformIndex].isNonPlayer && (component = MCR.radarTargets[MCR.targetTransformIndex].transform.gameObject.GetComponent<RadarBoosterItem>()) != null)
@@ -74,11 +75,13 @@ namespace EnhancedRadarBooster
 #if DEBUG
                 Plugin.MLogS.LogInfo($" - {i} - {codes[i]} | {codes[i].opcode} | {codes[i].operand} | {(codes[i].Is(OpCodes.Ldstr, "Targeted player is null"))}");
 #endif
+                Plugin.MLogS.LogInfo($" - {i} - {codes[i]} | {codes[i].opcode} | {codes[i].operand} | {(codes[i].Is(OpCodes.Ldstr, "Targeted player is null"))}");
                 if (codes[i].Is(OpCodes.Ldstr, "Targeted player is null"))
                 {
 #if DEBUG
                     Plugin.MLogS.LogInfo($"START {i}");
 #endif
+                    Plugin.MLogS.LogInfo($"START {i}");
                     startIndex = i;
                 }
             }
