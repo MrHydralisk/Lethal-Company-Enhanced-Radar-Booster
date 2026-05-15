@@ -1,4 +1,7 @@
-*1.8.1**
+**1.8.2**
+- Rebuild to fit files v81.
+
+**1.8.1**
 - Rebuild to fit files v73.
 
 **1.8.0**

@@ -20,7 +20,7 @@ namespace EnhancedRadarBooster
         public static ConfigEntry<float> remoteScrapRBFlashRange;
         public static ConfigEntry<bool> remoteScrapRBFlashSync;
 
-        
+
         public static bool eRBNHEnabledValue;
 
         public static bool mapRangeRBEnabledValue;
@@ -44,7 +44,7 @@ namespace EnhancedRadarBooster
         public static void Bind()
         {
             eRBNHEnabled = Plugin.config.Bind<bool>("Networking", "ERBNHEnabled", true, "Enable mod Networking?\nRequired to enable features of [All clients] type.\nWill require having this mod to join lobby.");
-            
+
             mapRangeRBEnabled = Plugin.config.Bind<bool>("Map", "MapRangeRBEnabled", true, "Will Radar Booster provide a bigger vision range on Map Monitor?\n[One Client]");
             mapRangeRBMultiplier = Plugin.config.Bind<float>("Map", "MapRangeRBMultiplier", 2f, "How much will be increased vision range on Map Monitor.\nSuggested values between x1.5-x2. Bigger values can prevent some thing model objects from showing on map.");
             mapRangeRBSync = Plugin.config.Bind<bool>("Map", "MapRangeRBSync", false, "Will synchronize Map settings with all connected clients to have same values?\nIf Host then will force sync settings with all Clients.\nIf Client then will get settings from Host.");

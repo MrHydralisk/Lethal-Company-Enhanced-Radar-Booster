@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection.Emit;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.AI;
 using static Unity.Netcode.CustomMessagingManager;
 
 namespace EnhancedRadarBooster
@@ -116,7 +117,7 @@ namespace EnhancedRadarBooster
                     if (component != null)
                     {
                         Vector3 position3 = RoundManager.Instance.insideAINodes[shipTeleporterSeed.Next(0, RoundManager.Instance.insideAINodes.Length)].transform.position;
-                        position3 = RoundManager.Instance.GetRandomNavMeshPositionInBoxPredictable(position3, randomSeed: shipTeleporterSeed);
+                        position3 = RoundManager.Instance.GetRandomNavMeshPositionInBoxPredictable(position3, 10f, default(NavMeshHit), shipTeleporterSeed);
                         EnhancedRadarBoosterNetworkHandler.instance.TeleportRadarBoosterRpc(component.GetComponent<NetworkObject>(), position3, true);
                     }
                 }
@@ -137,39 +138,23 @@ namespace EnhancedRadarBooster
 
         public static IEnumerable<CodeInstruction> ST_beamOutPlayer_Transpiler(IEnumerable<CodeInstruction> instructions)
         {
-            bool foundMassUsageMethod = false;
             int startIndex = -1;
-            int endIndex = -1;
             List<CodeInstruction> codes = new List<CodeInstruction>(instructions);
             for (int i = 0; i < codes.Count; i++)
             {
-                if (codes[i].Calls(AccessTools.Method(typeof(RoundManager), "get_Instance")) && (i + 5 < codes.Count) && codes[i+5].Calls(AccessTools.Method(typeof(RoundManager), "get_Instance")))
+                if (codes[i].Calls(AccessTools.Method(typeof(ShipTeleporter), "GetInverseTelePosition")))
                 {
                     startIndex = i;
-                    for (int j = startIndex + 1; j < codes.Count; j++)
-                    {
-                        if (codes[j].IsStloc() && codes[j].ToString().Contains("UnityEngine.Vector3"))
-                        {
-                            foundMassUsageMethod = true;
-                            endIndex = j;
-                            break;
-                        }
-                        if (codes[j].opcode == OpCodes.Ret)
-                            break;
-                    }
-                    if (foundMassUsageMethod)
-                    {
-                        break;
-                    }
+                    break;
                 }
             }
-            if (startIndex > -1 && endIndex > -1)
+            if (startIndex > -1)
             {
                 List<CodeInstruction> instructionsToInsert = new List<CodeInstruction>();
                 instructionsToInsert.Add(new CodeInstruction(OpCodes.Ldloc_S, 8));
                 instructionsToInsert.Add(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(HarmonyPatches), "VectorToRadarBooster")));
                 instructionsToInsert.Add(new CodeInstruction(OpCodes.Stloc_S, 8));
-                codes.InsertRange(endIndex + 1, instructionsToInsert);
+                codes.InsertRange(startIndex + 2, instructionsToInsert);
             }
             List<CodeInstruction> instructionsToInsert2 = new List<CodeInstruction>();
             instructionsToInsert2.Add(new CodeInstruction(OpCodes.Ldloc_1));

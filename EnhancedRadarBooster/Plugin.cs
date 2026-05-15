@@ -1,10 +1,10 @@
 ﻿using BepInEx;
-using System.Runtime.CompilerServices;
-using System;
-using BepInEx.Logging;
-using UnityEngine;
-using System.Reflection;
 using BepInEx.Configuration;
+using BepInEx.Logging;
+using System;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using UnityEngine;
 
 namespace EnhancedRadarBooster
 {
